@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, To, useNavigate, useParams } from "react-router-dom";
 import { Todo } from "../types";
 import * as TodosAPI from "../services/TodosAPI";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -13,42 +13,35 @@ const TodoPage = () => {
   const { id } = useParams();
   const todoId = Number(id);
 
+  //extracted properties (data, isError, isLoading, and getTodo) allow you to handle different states of the data fetching process
   const {
     data: todo,
     isError,
     isLoading,
     refetch: getTodo,
-  } = useQuery(["todo", { id: todoId }], () => TodosAPI.getTodo(todoId));
+  } = useQuery(["todo", { id: todoId }], () => TodosAPI.getTodo(todoId)); //the hook will fetch a todo (querykey) with the specified id(query parameter)
 
-  // Delete a todo in the api
-  const deleteTodo = async (todo: Todo) => {
-    if (!todo.id) {
-      return;
+  const toggleTodoMutation = useMutation(
+    (updatedTodo: Todo) =>
+      TodosAPI.updateTodo(updatedTodo.id!, {
+        completed: !updatedTodo.completed,
+      }),
+    {
+      onSuccess: () => {
+        // This function will be called after the mutation is successful
+        getTodo();
+      },
     }
+  );
 
-    // Delete todo from the api
-    await TodosAPI.deleteTodo(todo.id);
-
-    // Navigate user to `/todos` (using search params/query params)
-    navigate("/todos?deleted=true", {
-      replace: true,
-    });
-  };
-
-  // Toggle the completed status of a todo in the api
-  const toggleTodo = async (todo: Todo) => {
-    if (!todo.id) {
-      return;
-    }
-
-    // Update a todo in the api
-    const updatedTodo = await TodosAPI.updateTodo(todo.id, {
-      completed: !todo.completed,
-    });
-
-    // update todo state with the updated todo
-    getTodo();
-  };
+  const deleteTodoMutation = useMutation(() => TodosAPI.deleteTodo(todoId), {
+    onSuccess: () => {
+      // This function will be called after the delete is successful
+      navigate("/todos?deleted=true", {
+        replace: true,
+      });
+    },
+  });
 
   if (isError) {
     return (
@@ -76,7 +69,10 @@ const TodoPage = () => {
       </p>
 
       <div className="buttons mb-3">
-        <Button variant="success" onClick={() => toggleTodo(todo)}>
+        <Button
+          variant="success"
+          onClick={() => toggleTodoMutation.mutate(todo)}
+        >
           Done?
         </Button>
 
@@ -92,7 +88,7 @@ const TodoPage = () => {
       <ConfirmationModal
         show={showConfirmDelete}
         onCancel={() => setShowConfirmDelete(false)}
-        onConfirm={() => deleteTodo(todo)}
+        onConfirm={() => deleteTodoMutation.mutate()}
       >
         Confirm?
       </ConfirmationModal>

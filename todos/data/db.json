@@ -2,18 +2,18 @@
   "todos": [
     {
       "title": "WOOPWOOP",
-      "completed": false,
+      "completed": true,
       "id": 1
     },
     {
       "title": "Learn React Router",
-      "completed": false,
+      "completed": true,
       "id": 2
     },
     {
-      "title": "Hej",
+      "title": "Testar",
       "completed": false,
-      "id": 8
+      "id": 3
     }
   ]
 }
