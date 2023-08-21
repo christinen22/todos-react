@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@tanstack/eslint-plugin-query": "^4.32.5"
+  }
+}
