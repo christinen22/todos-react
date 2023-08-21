@@ -18,7 +18,7 @@ const EditTodoPage = () => {
     isError,
     isLoading,
     refetch: getTodo,
-  } = useQuery(["todo", { id: todoId }], () => TodosAPI.getTodo(todoId));
+  } = useQuery(["todo", { id: todoId }], () => TodosAPI.getTodo(todoId)); //the hook will fetch a todo with the specified id
 
   const updateTodoMutation = useMutation((updateData: Partial<Todo>) =>
     TodosAPI.updateTodo(todoId, updateData)
