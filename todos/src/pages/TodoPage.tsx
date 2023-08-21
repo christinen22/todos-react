@@ -77,7 +77,7 @@ const TodoPage = () => {
 
       <div className="buttons mb-3">
         <Button variant="success" onClick={() => toggleTodo(todo)}>
-          Toggle
+          Done?
         </Button>
 
         <Link to={`/todos/${todoId}/edit`}>

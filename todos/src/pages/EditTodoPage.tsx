@@ -1,104 +1,88 @@
-import { useEffect, useState } from 'react'
-import Alert from 'react-bootstrap/Alert'
-import Button from 'react-bootstrap/Button'
-import Form from 'react-bootstrap/Form'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Todo } from '../types'
-import * as TodosAPI from '../services/TodosAPI'
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import { useNavigate, useParams } from "react-router-dom";
+import { Todo } from "../types";
+import * as TodosAPI from "../services/TodosAPI";
 
 const EditTodoPage = () => {
-	const [error, setError] = useState<string|null>(null)
-	const [loading, setLoading] = useState(true)
-	const [todo, setTodo] = useState<Todo|null>(null)
-	const [newTodoTitle, setNewTodoTitle] = useState("")
-	const navigate = useNavigate()
-	const { id } = useParams()
-	const todoId = Number(id)
+  const [newTodoTitle, setNewTodoTitle] = useState("");
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const todoId = Number(id);
 
-	// Get todo from API
-	const getTodo = async (id: number) => {
-		setError(null)
-		setLoading(true)
+  const {
+    data: todo,
+    isError,
+    isLoading,
+    refetch: getTodo,
+  } = useQuery(["todo", { id: todoId }], () => TodosAPI.getTodo(todoId));
 
-		try {
-			// call TodosAPI
-			const data = await TodosAPI.getTodo(id)
+  const updateTodoMutation = useMutation((updateData: Partial<Todo>) =>
+    TodosAPI.updateTodo(todoId, updateData)
+  );
 
-			// update todo state with data
-			setTodo(data)
-			setNewTodoTitle(data.title)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (err: any) {
-			// set error
-			setError(err.message)
-		}
+    if (!todo || !todo.id) {
+      return;
+    }
 
-		setLoading(false)
-	}
+    //mutateAsync method to update the todo title, it triggers a mutation asynchronously and await its completion
+    await updateTodoMutation.mutateAsync({
+      title: newTodoTitle,
+    });
+    // redirect user to /todos/:id
+    navigate(`/todos/${todo.id}`);
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
+    getTodo();
+  };
 
-		if (!todo || !todo.id) {
-			return
-		}
+  if (isError) {
+    return (
+      <Alert variant="warning">
+        <h1>Something went wrong!</h1>
 
-		// Update a todo in the api
-		await TodosAPI.updateTodo(todo.id, {
-			title: newTodoTitle,
-		})
+        {/* .mutate({}) is calling the mutate method on the updateTodoMutation instance, mutate is used to trigger the mutation operation (empy object acts as a placeholder, isnt needed in this case) */}
+        <Button variant="primary" onClick={() => updateTodoMutation.mutate({})}>
+          Try Again
+        </Button>
+      </Alert>
+    );
+  }
 
-		// redirect user to /todos/:id
-		navigate(`/todos/${todo.id}`)
-	}
+  if (isLoading || !todo) {
+    return <p>Loading...</p>;
+  }
 
-	useEffect(() => {
-		if (typeof todoId !== "number") {
-			return
-		}
+  return (
+    <>
+      <h1>Edit: {todo.title}</h1>
 
-		getTodo(todoId)
-	}, [todoId])
+      <Form onSubmit={handleSubmit} className="mb-4">
+        <Form.Group className="mb-3" controlId="title">
+          <Form.Label>Title</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter the new title"
+            onChange={(e) => setNewTodoTitle(e.target.value)}
+            value={newTodoTitle}
+          />
+        </Form.Group>
 
-	if (error) {
-		return (
-			<Alert variant="warning">
-				<h1>Something went wrong!</h1>
-				<p>{error}</p>
+        <Button variant="primary" type="submit">
+          Save
+        </Button>
+      </Form>
 
-				<Button variant='primary' onClick={() => getTodo(todoId)}>TRY AGAIN!!!</Button>
-			</Alert>
-		)
-	}
+      <Button variant="secondary" onClick={() => navigate(-1)}>
+        &laquo; Go back
+      </Button>
+    </>
+  );
+};
 
-	if (loading || !todo) {
-		return (<p>Loading...</p>)
-	}
-
-	return (
-		<>
-			<h1>Edit: {todo.title}</h1>
-
-			<Form onSubmit={handleSubmit} className='mb-4'>
-				<Form.Group className="mb-3" controlId="title">
-					<Form.Label>Title</Form.Label>
-					<Form.Control
-						type="text"
-						placeholder="Enter the new title"
-						onChange={(e) => setNewTodoTitle(e.target.value)}
-						value={newTodoTitle}
-					/>
-				</Form.Group>
-
-				<Button variant="primary" type="submit">
-					Save
-				</Button>
-			</Form>
-
-			<Button variant='secondary' onClick={() => navigate(-1)}>&laquo; Go back</Button>
-		</>
-	)
-}
-
-export default EditTodoPage
+export default EditTodoPage;

@@ -32,3 +32,15 @@ body {
     color: #e74c3c;;
   }
 
+.todolist {
+    display: flex;
+    flex-direction: column;
+}
+
+.btn {
+
+    background-color: #e74c3c;
+    margin-top: 1rem;
+    font-weight: bold;
+    
+  }

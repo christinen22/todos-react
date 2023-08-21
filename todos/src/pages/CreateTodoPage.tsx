@@ -1,47 +1,54 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Alert from 'react-bootstrap/Alert'
-import { Todo } from '../types'
-import AddNewTodoForm from '../components/AddNewTodoForm'
-import * as TodosAPI from '../services/TodosAPI'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import Alert from "react-bootstrap/Alert";
+import { Todo } from "../types";
+import AddNewTodoForm from "../components/AddNewTodoForm";
+import * as TodosAPI from "../services/TodosAPI";
 
 const CreateTodoPage = () => {
-	const [success, setSuccess] = useState<boolean|null>(null)
-	const navigate = useNavigate()
+  const [success, setSuccess] = useState<boolean | null>(null);
+  const navigate = useNavigate();
 
-	// Create a new todo in the API
-	const addTodo = async (todo: Todo) => {
-		try {
-			const createdTodo = await TodosAPI.createTodo(todo)
+  const {
+    data: todos,
+    isError,
+    refetch: getTodos,
+  } = useQuery(["todos"], TodosAPI.getTodos);
 
-			setTimeout(() => {
-				navigate("/todos")
-			}, 2000)
+  const createTodoMutation = useMutation(
+    (newTodo: Todo) => TodosAPI.createTodo(newTodo),
+    {
+      onSuccess: () => {
+        getTodos(); // Refetch todos on success
+      },
+    }
+  );
 
-			setSuccess(!!createdTodo)
+  //  mutation function
+  const addTodo = (todo: Todo) => {
+    createTodoMutation.mutate(todo);
+  };
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (err: any) {
-			setSuccess(false)
+  return (
+    <>
+      <h1 className="mb-3">Create a new Todo</h1>
 
-		}
-	}
+      <AddNewTodoForm onAddTodo={addTodo} />
 
-	return (
-		<>
-			<h1 className="mb-3">Create a new Todo</h1>
+      {success === true && (
+        <Alert variant="success" className="mt-3">
+          Todo created!
+        </Alert>
+      )}
 
-			<AddNewTodoForm onAddTodo={addTodo} />
+      {success === false && (
+        <Alert variant="warning" className="mt-3">
+          Todo could not be created 😔
+        </Alert>
+      )}
+    </>
+  );
+};
 
-			{success === true && (
-				<Alert variant="success" className="mt-3">Todo created!</Alert>
-			)}
-
-			{success === false && (
-				<Alert variant="warning" className="mt-3">Todo could not be created 😔</Alert>
-			)}
-		</>
-	)
-}
-
-export default CreateTodoPage
+export default CreateTodoPage;

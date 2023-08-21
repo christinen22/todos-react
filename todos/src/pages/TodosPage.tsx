@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Todo } from "../types";
 import Alert from "react-bootstrap/Alert";
 import ListGroup from "react-bootstrap/ListGroup";
@@ -20,10 +20,18 @@ const TodosPage = () => {
     refetch: getTodos,
   } = useQuery(["todos"], TodosAPI.getTodos);
 
-  // Create a new todo in the API
-  const addTodo = async (todo: Todo) => {
-    await TodosAPI.createTodo(todo);
-    getTodos();
+  const createTodoMutation = useMutation(
+    (newTodo: Todo) => TodosAPI.createTodo(newTodo),
+    {
+      onSuccess: () => {
+        getTodos(); // Refetch todos on success
+      },
+    }
+  );
+
+  //  mutation function
+  const addTodo = (todo: Todo) => {
+    createTodoMutation.mutate(todo);
   };
 
   return (
